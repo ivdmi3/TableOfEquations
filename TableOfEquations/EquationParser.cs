@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace MathMatrix
+namespace MathWorker
 {
     public class EquationParser
     {
@@ -12,19 +12,26 @@ namespace MathMatrix
         private const string RIGHT_PARENTHESIS = ")";
         private const string ERROR_PARENTHESIS = "Mismatched parentheses";
 
-        private readonly static HashSet<char> Separators;
+        private readonly static HashSet<char> TokenSeparators;
         private readonly static Dictionary<char, OperatorInfo> OperatorInfos;
         private readonly static HashSet<string> OperatorChecker;
-        
+
         private delegate decimal BinaryOperator(decimal operand1, decimal operand2);
         private readonly static Dictionary<char, BinaryOperator> operations;
 
         private Dictionary<string, double> ConstantsDicitionary;
         private HashSet<string> ConstantsNames;
         private bool HasConstatsDictionary = false;
+
+        private delegate bool CheckFloat(char c);
+        private CheckFloat CheckFloatDelegate;
+
+        private delegate string ReplaceFloatDelimeter(string token);
+        private ReplaceFloatDelimeter ReplaceFloatDelimeterDelegate;
+
         static EquationParser()
         {
-            Separators = new HashSet<char> { '(', ')', '+', '-', '*', '/', '^' };
+            TokenSeparators = new HashSet<char> { '(', ')', '+', '*', '/', '^' };
             OperatorInfos = new Dictionary<char, OperatorInfo>()
             {
                 { '+', new OperatorInfo(1, Associativity.Left) },
@@ -40,7 +47,7 @@ namespace MathMatrix
                 { '-', (op1,op2) => op2-op1},
                 { '*', (op1,op2) => op2*op1},
                 { '/', (op1,op2) => op2/op1},
-                { '^', (op1,op2) => (decimal)Math.Pow(Convert.ToDouble(op2), Convert.ToDouble(op1))}
+                { '^', (op1,op2) => (decimal) Math.Pow(Convert.ToDouble(op2), Convert.ToDouble(op1))}
             };
         }
 
@@ -63,9 +70,9 @@ namespace MathMatrix
                     decimal result = 0;
                     try
                     {
-                        decimal a = Convert.ToDecimal(stack.Pop());
-                        decimal b = Convert.ToDecimal(stack.Pop());
-                        result = operations[str.ToCharArray()[0]](a, b);
+                        decimal a = Convert.ToDecimal(stack.Pop());//, CultureInfo.InvariantCulture);
+                        decimal b = Convert.ToDecimal(stack.Pop());//, CultureInfo.InvariantCulture);
+                        result = operations[str[0]](a, b);
                     }
                     catch (Exception ex)
                     {
@@ -83,36 +90,52 @@ namespace MathMatrix
         }
         private IEnumerable<string> TokenIterator(string input)
         {
-            int charIndex = 0;
-            char thisChar;
-            while (charIndex < input.Length)
+            int index = 0;
+            bool IsPreviousCharSeparator = true;
+            while (index < input.Length)
             {
-                thisChar = input[charIndex];
                 StringBuilder sb = new StringBuilder(STRING_BUIDER_MAX_CAPACITY);
-                sb.Append(thisChar);
-                if (!Separators.Contains(thisChar))
+                char curChar = input[index];
+                sb.Append(curChar);
+                if (curChar == '-')
                 {
-                    if (char.IsDigit(thisChar))
-                        for (int i = charIndex + 1; i < input.Length && (char.IsDigit(input[i]) || input[i] == ',' || input[i] == '.'); i++)
+                    if (IsPreviousCharSeparator)
+                    {
+                        for (int i = index + 1; i < input.Length && CheckFloatDelegate(input[i]); i++)
                             sb.Append(input[i]);
-                    else if (char.IsLetter(thisChar)) 
-                        for (int i = charIndex + 1; i < input.Length && (char.IsLetter(input[i]) || char.IsDigit(input[i])); i++)
-                            sb.Append(input[i]);
+                        IsPreviousCharSeparator = false;
+                    }
+                    else
+                        IsPreviousCharSeparator = true;
                 }
+                else if (!TokenSeparators.Contains(curChar))
+                {
+                    if (char.IsDigit(curChar))
+                        for (int i = index + 1; i < input.Length && CheckFloatDelegate(input[i]); i++)
+                            sb.Append(input[i]);
+                    else if (char.IsLetter(curChar))
+                        for (int i = index + 1; i < input.Length && (char.IsLetter(input[i]) || char.IsDigit(input[i])); i++)
+                            sb.Append(input[i]);
+                    IsPreviousCharSeparator = false;
+                }
+                else
+                    IsPreviousCharSeparator = true;
+
                 yield return sb.ToString();
-                charIndex += sb.Length;
+                index += sb.Length;
             }
         }
+
         private IEnumerable<string> ShuntingYardAlgorithm(string input)
         {
             Queue<string> outputQueue = new Queue<string>();
             Stack<string> StackOperators = new Stack<string>();
 
-            foreach(string token in TokenIterator(input))
+            foreach (string token in TokenIterator(input))
             {
-                double dValue;
-                if (double.TryParse(token, out dValue))
-                    outputQueue.Enqueue(token);
+                decimal dValue;
+                if (decimal.TryParse(ReplaceFloatDelimeterDelegate(token), out dValue))
+                    outputQueue.Enqueue(ReplaceFloatDelimeterDelegate(token));
                 else if (HasConstatsDictionary && ConstantsNames.Contains(token))
                     outputQueue.Enqueue(ConstantsDicitionary[token].ToString());
                 else if (OperatorChecker.Contains(token))
@@ -139,10 +162,10 @@ namespace MathMatrix
                 }
             }
 
-            while(StackOperators.Count > 0)
+            while (StackOperators.Count > 0)
             {
                 string top = StackOperators.Pop();
-                if(top == LEFT_PARENTHESIS || top == RIGHT_PARENTHESIS) return new string[] { ERROR_PARENTHESIS }; //throw new ArithmeticException("Mismatched parentheses");
+                if (top == LEFT_PARENTHESIS || top == RIGHT_PARENTHESIS) return new string[] { ERROR_PARENTHESIS }; //throw new ArithmeticException("Mismatched parentheses");
                 outputQueue.Enqueue(top);
             }
 
@@ -153,7 +176,19 @@ namespace MathMatrix
         #region Public API
         public EquationParser()
         {
+            SetRuLocale();
+        }
 
+        public void SetRuLocale()
+        {
+            CheckFloatDelegate = (char c) => char.IsDigit(c) || c == ',';
+            ReplaceFloatDelimeterDelegate = (string token) => token.Replace('.', ',');
+        }
+
+        public void SetOtherLocale()
+        {
+            CheckFloatDelegate = (char c) => char.IsDigit(c) || c == '.';
+            ReplaceFloatDelimeterDelegate = (string token) => token.Replace(',', '.');
         }
 
         public void SetConstants(Dictionary<string, double> ConstantsDicitionary)

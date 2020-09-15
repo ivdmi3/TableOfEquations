@@ -2,11 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Test;
 
-namespace MathMatrix
+namespace MathWorker
 {
     class Program
     {
@@ -23,18 +21,18 @@ namespace MathMatrix
                 {"qwee", 654},
                 {"qwe", 8521},
                 {"yuio", 41581},
-                { "poi", 789},
-                { "hjk", 100},
-                { "iuo", 55}
+                {"poi", 789},
+                {"hjk", 100},
+                {"iuo", 55}
             };
 
             int amountOfTest = 10;
             int amountOfExpressions = 10000;
             int amountOfOperands = 20;
             IEnumerable<string>[] data = new IEnumerable<string>[amountOfTest] ;
-
-            //EquationParserShow(amountOfExpressions, amountOfOperands, constants);
-
+#if false
+            EquationParserShow(amountOfExpressions, amountOfOperands, constants);
+#elif false
             for (int i = 0; i < amountOfTest; i++)
             {
                 data[i] = TestData.Generate(amountOfExpressions, amountOfOperands, constants.Keys);
@@ -45,7 +43,13 @@ namespace MathMatrix
             Console.WriteLine();
 
             mxParserTest(data, constants);
-
+#elif false
+            string equ = "=-12.12+10*89+-13*-7";
+            EquationParser eq = new EquationParser();
+            Console.WriteLine(eq.Calculate(equ));
+#elif true
+            EquationParserShow(100, 10);
+#endif
             Console.ReadKey();
 
         }
@@ -59,11 +63,23 @@ namespace MathMatrix
 
             foreach (string exp in data)
             {
-                string result = ep.Calculate(exp);
-                Console.WriteLine($"Expression: {exp} Result: {result}");
+                double result = double.Parse(ep.Calculate(exp));
+                Console.WriteLine($"Expression: {exp} Result: {result:N2}");
             }
         }
-        
+
+        private static void EquationParserShow(int amount, int length)
+        {
+            EquationParser ep = new EquationParser();
+
+            IEnumerable<string> data = TestData.Generate(10000, 20);
+
+            foreach (string exp in data)
+            {
+                double result = double.Parse(ep.Calculate(exp));
+                Console.WriteLine($"Expression: {exp,-150} Result: {result,-150:F2}");
+            }
+        }
 
         private static void EquationParserTest(IEnumerable<string>[] data, Dictionary<string, double> constants)
         {
