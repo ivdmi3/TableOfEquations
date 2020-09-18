@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Test;
 
 namespace MathWorker
@@ -26,7 +27,7 @@ namespace MathWorker
                 {"iuo", 55}
             };
 
-            int amountOfTest = 10;
+            int amountOfTest = 20;
             int amountOfExpressions = 10000;
             int amountOfOperands = 20;
             IEnumerable<string>[] data = new IEnumerable<string>[amountOfTest] ;
@@ -48,7 +49,7 @@ namespace MathWorker
             EquationParser eq = new EquationParser();
             Console.WriteLine(eq.Calculate(equ));
 #elif true
-            EquationParserShow(100, 10);
+            EquationParserShow(100, 10, constants);
 #endif
             Console.ReadKey();
 
@@ -64,13 +65,13 @@ namespace MathWorker
             foreach (string exp in data)
             {
                 double result = double.Parse(ep.Calculate(exp));
-                Console.WriteLine($"Expression: {exp} Result: {result:N2}");
+                Console.WriteLine($"Expression: {exp,-150} Result: {result,-150:F2}");
             }
         }
 
         private static void EquationParserShow(int amount, int length)
         {
-            EquationParser ep = new EquationParser();
+            EquationParser ep = new EquationParser(); 
 
             IEnumerable<string> data = TestData.Generate(10000, 20);
 
@@ -88,6 +89,8 @@ namespace MathWorker
 
             Stopwatch sw = new Stopwatch();
 
+            List<long> times = new List<long>();
+
             for (int i = 0; i < data.Length; i++)
             {
                 sw.Restart();
@@ -97,8 +100,10 @@ namespace MathWorker
 
                 sw.Stop();
 
+                times.Add(sw.ElapsedMilliseconds);
                 Console.WriteLine($"№{i + 1} EquationParser time: {sw.ElapsedMilliseconds} ms");
             }
+            Console.WriteLine($"EquationParser time max: {times.Max()} ms, min: {times.Min()}, average: {times.Average()}");
         }
 
         private static void mxParserTest(IEnumerable<string>[] data, Dictionary<string, double> constants)
@@ -108,6 +113,8 @@ namespace MathWorker
                 expr.defineConstant(item.Key, item.Value);
 
             Stopwatch sw = new Stopwatch();
+
+            List<long> times = new List<long>();
 
             for (int i = 0; i < data.Length; i++)
             {
@@ -119,8 +126,10 @@ namespace MathWorker
                 }
                 sw.Stop();
 
+                times.Add(sw.ElapsedMilliseconds);
                 Console.WriteLine($"№{i + 1} mxParser time: {sw.ElapsedMilliseconds} ms");
             }
+            Console.WriteLine($"mxParser time max: {times.Max()} ms, min: {times.Min()}, average: {times.Average()}");
         }
     }
 }

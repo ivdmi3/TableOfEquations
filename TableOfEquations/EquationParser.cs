@@ -12,6 +12,8 @@ namespace MathWorker
         private const string RIGHT_PARENTHESIS = ")";
         private const string ERROR_PARENTHESIS = "Mismatched parentheses";
 
+        private static string[] RESULT_ERROR_PARENTHESIS = new string[] { ERROR_PARENTHESIS };
+
         private readonly static HashSet<char> TokenSeparators;
         private readonly static Dictionary<char, OperatorInfo> OperatorInfos;
         private readonly static HashSet<string> OperatorChecker;
@@ -92,17 +94,22 @@ namespace MathWorker
         {
             int index = 0;
             bool IsPreviousCharSeparator = true;
+            StringBuilder sb = new StringBuilder(STRING_BUIDER_MAX_CAPACITY);
             while (index < input.Length)
             {
-                StringBuilder sb = new StringBuilder(STRING_BUIDER_MAX_CAPACITY);
+                sb.Clear();
                 char curChar = input[index];
-                sb.Append(curChar);
+                sb.Append(input[index]);
                 if (curChar == '-')
                 {
                     if (IsPreviousCharSeparator)
                     {
-                        for (int i = index + 1; i < input.Length && CheckFloatDelegate(input[i]); i++)
-                            sb.Append(input[i]);
+                        if (char.IsDigit(input[index + 1]))
+                            for (int i = index + 1; i < input.Length && CheckFloatDelegate(input[i]); i++)
+                                sb.Append(input[i]);
+                        else if (char.IsLetter(input[index + 1]))
+                            for (int i = index + 1; i < input.Length && (char.IsLetter(input[i]) || char.IsDigit(input[i])); i++)
+                                sb.Append(input[i]);
                         IsPreviousCharSeparator = false;
                     }
                     else
@@ -126,6 +133,65 @@ namespace MathWorker
             }
         }
 
+        private IEnumerable<string> TokenIterator2(string input)
+        {
+            int index = 0;
+            bool IsPreviousCharSeparator = true;
+            while (index < input.Length)
+            {
+                string token = string.Empty;
+                if (input[index] == '-')
+                {
+                    if (IsPreviousCharSeparator)
+                    {
+                        if (char.IsDigit(input[index + 1]))
+                            token = '-' + MakeNumericToken(index + 1, input);
+                        else if (char.IsLetter(input[index + 1]))
+                            token = '-' + MakeTextToken(index + 1, input);
+                        IsPreviousCharSeparator = false;
+                    }
+                    else
+                    {
+                        token = char.ToString('-');
+                        IsPreviousCharSeparator = true;
+                    }                                            
+                }
+                else if (!TokenSeparators.Contains(input[index]))
+                {
+                    if (char.IsDigit(input[index]))
+                        token = MakeNumericToken(index, input);
+                    else if (char.IsLetter(input[index]))
+                        token = MakeTextToken(index, input);
+                    IsPreviousCharSeparator = false;
+                }
+                else
+                {
+                    token = char.ToString(input[index]);
+                    IsPreviousCharSeparator = true;
+                }
+
+                index += token.Length;
+                yield return token;                
+            }
+        }
+
+        private string MakeNumericToken(int startIndex, string input)
+        {
+            StringBuilder sb = new StringBuilder(STRING_BUIDER_MAX_CAPACITY);
+            for (int i = startIndex; i < input.Length && CheckFloatDelegate(input[i]); i++)
+                sb.Append(input[i]);
+            return sb.ToString();
+        }
+
+        private string MakeTextToken(int startIndex, string input)
+        {
+            StringBuilder sb = new StringBuilder(STRING_BUIDER_MAX_CAPACITY);
+            for (int i = startIndex; i < input.Length && (char.IsLetter(input[i]) || char.IsDigit(input[i])); i++)
+                sb.Append(input[i]);
+            return sb.ToString();
+        }
+
+
         private IEnumerable<string> ShuntingYardAlgorithm(string input)
         {
             Queue<string> outputQueue = new Queue<string>();
@@ -134,28 +200,35 @@ namespace MathWorker
             foreach (string token in TokenIterator(input))
             {
                 decimal dValue;
-                if (decimal.TryParse(ReplaceFloatDelimeterDelegate(token), out dValue))
-                    outputQueue.Enqueue(ReplaceFloatDelimeterDelegate(token));
-                else if (HasConstatsDictionary && ConstantsNames.Contains(token))
-                    outputQueue.Enqueue(ConstantsDicitionary[token].ToString());
-                else if (OperatorChecker.Contains(token))
+                string value = token;
+                string signPrefix = string.Empty;
+                if (token.Length > 1 && token.StartsWith("-"))
+                {
+                    value = token.Substring(1);
+                    signPrefix = "-";
+                }
+                if (decimal.TryParse(ReplaceFloatDelimeterDelegate(value), out dValue))
+                    outputQueue.Enqueue(signPrefix + dValue.ToString());
+                else if (HasConstatsDictionary && ConstantsNames.Contains(value))
+                    outputQueue.Enqueue(signPrefix + ConstantsDicitionary[value].ToString());
+                else if (OperatorChecker.Contains(value))
                 {
                     while (StackOperators.Count > 0
                         && !StackOperators.Peek().Equals(LEFT_PARENTHESIS)
-                        && (OperatorInfos[StackOperators.Peek()[0]].Precedence > OperatorInfos[token[0]].Precedence
-                        || (OperatorInfos[StackOperators.Peek()[0]].Precedence == OperatorInfos[token[0]].Precedence && OperatorInfos[token[0]].Associativity == Associativity.Left)))
+                        && (OperatorInfos[StackOperators.Peek()[0]].Precedence > OperatorInfos[value[0]].Precedence
+                        || (OperatorInfos[StackOperators.Peek()[0]].Precedence == OperatorInfos[value[0]].Precedence && OperatorInfos[value[0]].Associativity == Associativity.Left)))
                         outputQueue.Enqueue(StackOperators.Pop());
-                    StackOperators.Push(token);
+                    StackOperators.Push(value);
                 }
-                else if (token.Equals(LEFT_PARENTHESIS))
-                    StackOperators.Push(token);
-                else if (token.Equals(RIGHT_PARENTHESIS))
+                else if (value.Equals(LEFT_PARENTHESIS))
+                    StackOperators.Push(value);
+                else if (value.Equals(RIGHT_PARENTHESIS))
                 {
                     while (StackOperators.Count > 0 && !StackOperators.Peek().Equals(LEFT_PARENTHESIS))
                         outputQueue.Enqueue(StackOperators.Pop());
 
                     if (StackOperators.Count == 0)
-                        return new string[] { ERROR_PARENTHESIS }; //throw new ArithmeticException("Mismatched parentheses");
+                        return RESULT_ERROR_PARENTHESIS; //throw new ArithmeticException("Mismatched parentheses");
 
                     if (StackOperators.Peek().Equals(LEFT_PARENTHESIS))
                         StackOperators.Pop();
@@ -165,7 +238,7 @@ namespace MathWorker
             while (StackOperators.Count > 0)
             {
                 string top = StackOperators.Pop();
-                if (top == LEFT_PARENTHESIS || top == RIGHT_PARENTHESIS) return new string[] { ERROR_PARENTHESIS }; //throw new ArithmeticException("Mismatched parentheses");
+                if (top == LEFT_PARENTHESIS || top == RIGHT_PARENTHESIS) return RESULT_ERROR_PARENTHESIS; //throw new ArithmeticException("Mismatched parentheses");
                 outputQueue.Enqueue(top);
             }
 
