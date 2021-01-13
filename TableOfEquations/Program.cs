@@ -31,7 +31,7 @@ namespace MathWorker
             int amountOfExpressions = 10000;
             int amountOfOperands = 20;
             IEnumerable<string>[] data = new IEnumerable<string>[amountOfTest] ;
-#if false
+#if true
             EquationParserShow(amountOfExpressions, amountOfOperands, constants);
 #elif false
             for (int i = 0; i < amountOfTest; i++)
@@ -48,7 +48,7 @@ namespace MathWorker
             string equ = "=-12.12+10*89+-13*-7";
             EquationParser eq = new EquationParser();
             Console.WriteLine(eq.Calculate(equ));
-#elif true
+#elif false
             EquationParserShow(100, 10, constants);
 #endif
             Console.ReadKey();
@@ -108,6 +108,14 @@ namespace MathWorker
 
         private static void mxParserTest(IEnumerable<string>[] data, Dictionary<string, double> constants)
         {
+            for (int i= true ? 0 : 1 ; i<10; i+=2 )
+            {
+
+            }
+
+            string s = new string(new List<char>().ToArray());
+
+
             Expression expr = new Expression();
             foreach (var item in constants)
                 expr.defineConstant(item.Key, item.Value);
