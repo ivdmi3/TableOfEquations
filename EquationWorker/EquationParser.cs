@@ -20,7 +20,7 @@ namespace MathWorker
         private delegate decimal BinaryOperator(decimal operand1, decimal operand2);
         private readonly static Dictionary<char, BinaryOperator> operations;
 
-        private Dictionary<string, double> ConstantsDicitionary;
+        private Dictionary<string, decimal> ConstantsDicitionary;
         private HashSet<string> ConstantsNames;
         private bool HasConstatsDictionary = false;
 
@@ -61,11 +61,7 @@ namespace MathWorker
             while (queue.Count >= 0)
             {
                 if (!OperatorChecker.Contains(str))
-                {
                     stack.Push(str);
-                    if (queue.Count == 0) break;
-                    str = queue.Dequeue();
-                }
                 else
                 {
                     decimal result = 0;
@@ -80,11 +76,10 @@ namespace MathWorker
                         Console.WriteLine(ex.Message);
                     }
                     stack.Push(result.ToString());
-                    if (queue.Count > 0)
-                        str = queue.Dequeue();
-                    else
-                        break;
                 }
+
+                if (queue.Count == 0) break;
+                str = queue.Dequeue();
 
             }
             return stack.Pop();
@@ -207,7 +202,7 @@ namespace MathWorker
                     value = token.Substring(1);
                     signPrefix = "-";
                 }
-                if (decimal.TryParse(ReplaceFloatDelimeterDelegate(value), out dValue))
+                if (decimal.TryParse(value, out dValue))
                     outputQueue.Enqueue(signPrefix + dValue.ToString());
                 else if (HasConstatsDictionary && ConstantsNames.Contains(value))
                     outputQueue.Enqueue(signPrefix + ConstantsDicitionary[value].ToString());
@@ -255,20 +250,30 @@ namespace MathWorker
         public void SetRuLocale()
         {
             CheckFloatDelegate = (char c) => char.IsDigit(c) || c == ',';
-            ReplaceFloatDelimeterDelegate = (string token) => token.Replace('.', ',');
+            //ReplaceFloatDelimeterDelegate = (string token) => token.Replace('.', ',');
         }
 
         public void SetOtherLocale()
         {
             CheckFloatDelegate = (char c) => char.IsDigit(c) || c == '.';
             ReplaceFloatDelimeterDelegate = (string token) => token.Replace(',', '.');
+            
         }
 
-        public void SetConstants(Dictionary<string, double> ConstantsDicitionary)
+        public void SetConstants(Dictionary<string, decimal> ConstantsDicitionary)
         {
             this.ConstantsDicitionary = ConstantsDicitionary;
             ConstantsNames = new HashSet<string>(ConstantsDicitionary.Keys);
             HasConstatsDictionary = true;
+        }
+
+        public void AddConstant(string Name, decimal value)
+        {
+            if (HasConstatsDictionary)
+            {
+                ConstantsNames.Add(Name);
+                ConstantsDicitionary.Add(Name, value);
+            }
         }
 
         public string Calculate(string input)

@@ -1,4 +1,5 @@
-﻿using org.mariuszgromada.math.mxparser;
+﻿using FunctionListWorker;
+using org.mariuszgromada.math.mxparser;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,14 +12,14 @@ namespace MathWorker
     {
         static void Main(string[] args)
         {
-            Dictionary<string, double> constants = new Dictionary<string, double>()
+            Dictionary<string, decimal> constants = new Dictionary<string, decimal>()
             {
-                {"NDS", 20},
-                {"NALOG", 13},
+                {"афыва", 20},
+                {"вв", 13},
                 {"DEPTH", 100},
-                {"adsf", 123},
+                {"аа", 123},
                 {"fedw", 4},
-                {"vcxzc", 43},
+                {"ыва", 43},
                 {"qwee", 654},
                 {"qwe", 8521},
                 {"yuio", 41581},
@@ -28,10 +29,11 @@ namespace MathWorker
             };
 
             int amountOfTest = 20;
+
+            IEnumerable<string>[] data = new IEnumerable<string>[amountOfTest] ;
+#if false
             int amountOfExpressions = 10000;
             int amountOfOperands = 20;
-            IEnumerable<string>[] data = new IEnumerable<string>[amountOfTest] ;
-#if true
             EquationParserShow(amountOfExpressions, amountOfOperands, constants);
 #elif false
             for (int i = 0; i < amountOfTest; i++)
@@ -50,12 +52,51 @@ namespace MathWorker
             Console.WriteLine(eq.Calculate(equ));
 #elif false
             EquationParserShow(100, 10, constants);
+#elif true
+
+            FunctionInfo mainFunction = new FunctionInfo("main", "=Материалы+Услуги+Амортизация+ОЗП+НСХ+ДЗП+СВ+ОПР+ОХР+ТЗР+ВПЗ");
+            FunctionList listOfSubFunctions = new FunctionList
+            {
+                new FunctionInfo("ОЗП", "=трудзатр*стоимость"),
+                new FunctionInfo("НСХ", "=ОЗП*КНСХ"),
+                new FunctionInfo("ДЗП", "=(ОЗП+НСХ)*КДЗП"),
+                new FunctionInfo("СВ", "=(ОЗП+НСХ+ДЗП)*КСВ"),
+                new FunctionInfo("ОПР", "=ОЗП*КОПР"),
+                new FunctionInfo("ОХР", "=ОЗП*КОХР"),
+                new FunctionInfo("ТЗР", "=Материалы*КТЗР"),
+                new FunctionInfo("ВПЗ", "=ОЗП*КВПЗ")
+            };
+
+            Dictionary<string, decimal> variables = new Dictionary<string, decimal>()
+            {
+                {"Материалы", 278M },
+                {"Услуги", 50M },
+                {"Амортизация", 0M },
+                {"трудзатр", 1.24M },
+                {"стоимость", 430.41M },
+                {"КНСХ", 0.0792M },
+                {"КДЗП", 0.0949M },                
+                {"КСВ", 0.3327M },
+                {"КОПР", 0.9124M },
+                {"КОХР", 0.4058M },
+                {"КТЗР", 0.054M },
+                {"КВПЗ", 0 }
+            };
+
+            Worker fw = new Worker(mainFunction, listOfSubFunctions, variables);
+            Console.WriteLine("RESULT: " + fw.Сalculate());
+
+            foreach(FunctionInfo result in fw.GetSubResults())
+            {
+                Console.WriteLine(result.Name + ": " + result.Result);
+            }
+
 #endif
             Console.ReadKey();
 
         }
 
-        private static void EquationParserShow(int amount, int length, Dictionary<string, double> constants)
+        private static void EquationParserShow(int amount, int length, Dictionary<string, decimal> constants)
         {
             EquationParser ep = new EquationParser();
             ep.SetConstants(constants);
@@ -64,7 +105,7 @@ namespace MathWorker
 
             foreach (string exp in data)
             {
-                double result = double.Parse(ep.Calculate(exp));
+                decimal result = decimal.Parse(ep.Calculate(exp));
                 Console.WriteLine($"Expression: {exp,-150} Result: {result,-150:F2}");
             }
         }
@@ -77,12 +118,12 @@ namespace MathWorker
 
             foreach (string exp in data)
             {
-                double result = double.Parse(ep.Calculate(exp));
+                decimal result = decimal.Parse(ep.Calculate(exp));
                 Console.WriteLine($"Expression: {exp,-150} Result: {result,-150:F2}");
             }
         }
 
-        private static void EquationParserTest(IEnumerable<string>[] data, Dictionary<string, double> constants)
+        private static void EquationParserTest(IEnumerable<string>[] data, Dictionary<string, decimal> constants)
         {
             EquationParser ep = new EquationParser();
             ep.SetConstants(constants);
@@ -106,7 +147,7 @@ namespace MathWorker
             Console.WriteLine($"EquationParser time max: {times.Max()} ms, min: {times.Min()}, average: {times.Average()}");
         }
 
-        private static void mxParserTest(IEnumerable<string>[] data, Dictionary<string, double> constants)
+        private static void mxParserTest(IEnumerable<string>[] data, Dictionary<string, decimal> constants)
         {
             for (int i= true ? 0 : 1 ; i<10; i+=2 )
             {
@@ -114,11 +155,11 @@ namespace MathWorker
             }
 
             string s = new string(new List<char>().ToArray());
-
-
+            
             Expression expr = new Expression();
+
             foreach (var item in constants)
-                expr.defineConstant(item.Key, item.Value);
+                expr.defineConstant(item.Key, decimal.ToDouble(item.Value));
 
             Stopwatch sw = new Stopwatch();
 
@@ -137,6 +178,7 @@ namespace MathWorker
                 times.Add(sw.ElapsedMilliseconds);
                 Console.WriteLine($"№{i + 1} mxParser time: {sw.ElapsedMilliseconds} ms");
             }
+
             Console.WriteLine($"mxParser time max: {times.Max()} ms, min: {times.Min()}, average: {times.Average()}");
         }
     }
