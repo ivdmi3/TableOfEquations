@@ -57,14 +57,14 @@ namespace MathWorker
             FunctionInfo mainFunction = new FunctionInfo("main", "=Материалы+Услуги+Амортизация+ОЗП+НСХ+ДЗП+СВ+ОПР+ОХР+ТЗР+ВПЗ");
             FunctionList listOfSubFunctions = new FunctionList
             {
-                new FunctionInfo("ОЗП", "=трудзатр*стоимость"),
-                new FunctionInfo("НСХ", "=ОЗП*КНСХ"),
-                new FunctionInfo("ДЗП", "=(ОЗП+НСХ)*КДЗП"),
-                new FunctionInfo("СВ", "=(ОЗП+НСХ+ДЗП)*КСВ"),
-                new FunctionInfo("ОПР", "=ОЗП*КОПР"),
-                new FunctionInfo("ОХР", "=ОЗП*КОХР"),
-                new FunctionInfo("ТЗР", "=Материалы*КТЗР"),
-                new FunctionInfo("ВПЗ", "=ОЗП*КВПЗ")
+                new FunctionInfo("ОЗП", "=трудзатр*стоимость",2 ),
+                new FunctionInfo("НСХ", "=ОЗП*КНСХ",2 ),
+                new FunctionInfo("ДЗП", "=(ОЗП+НСХ)*КДЗП",2 ),
+                new FunctionInfo("СВ", "=(ОЗП+НСХ+ДЗП)*КСВ",2 ),
+                new FunctionInfo("ОПР", "=ОЗП*КОПР",2 ),
+                new FunctionInfo("ОХР", "=ОЗП*КОХР",2 ),
+                new FunctionInfo("ТЗР", "=Материалы*КТЗР", 2),
+                new FunctionInfo("ВПЗ", "=ОЗП*КВПЗ",2 )
             };
 
             Dictionary<string, decimal> variables = new Dictionary<string, decimal>()

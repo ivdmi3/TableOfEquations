@@ -22,7 +22,7 @@ namespace MathWorker
 
         private Dictionary<string, decimal> ConstantsDicitionary;
         private HashSet<string> ConstantsNames;
-        private bool HasConstatsDictionary = false;
+        private bool HasConstantsDictionary = false;
 
         private delegate bool CheckFloat(char c);
         private CheckFloat CheckFloatDelegate;
@@ -204,7 +204,7 @@ namespace MathWorker
                 }
                 if (decimal.TryParse(value, out dValue))
                     outputQueue.Enqueue(signPrefix + dValue.ToString());
-                else if (HasConstatsDictionary && ConstantsNames.Contains(value))
+                else if (HasConstantsDictionary && ConstantsNames.Contains(value))
                     outputQueue.Enqueue(signPrefix + ConstantsDicitionary[value].ToString());
                 else if (OperatorChecker.Contains(value))
                 {
@@ -264,16 +264,42 @@ namespace MathWorker
         {
             this.ConstantsDicitionary = ConstantsDicitionary;
             ConstantsNames = new HashSet<string>(ConstantsDicitionary.Keys);
-            HasConstatsDictionary = true;
+            HasConstantsDictionary = true;
         }
 
         public void AddConstant(string Name, decimal value)
         {
-            if (HasConstatsDictionary)
+            if (HasConstantsDictionary)
             {
                 ConstantsNames.Add(Name);
                 ConstantsDicitionary.Add(Name, value);
             }
+        }
+
+        public bool HasConstant(string name)
+        {
+            return HasConstantsDictionary && ConstantsNames.Contains(name);
+        }
+
+        public void DeleteConstant(string name)
+        {
+            if (HasConstantsDictionary)
+            {
+                ConstantsDicitionary.Remove(name);
+                ConstantsNames.Remove(name);
+
+            }
+        }
+
+        public void EditConstant(string Name, decimal value)
+        {
+            if (HasConstantsDictionary)
+                ConstantsDicitionary[Name] = value;
+        }
+
+        public Dictionary<string, decimal> GetConstants()
+        {
+            return ConstantsDicitionary;
         }
 
         public string Calculate(string input)
