@@ -15,7 +15,7 @@ namespace FunctionListWorkerGui
         static FormulaResolver()
         {
             // ([-+/*]-?\(*(\w+|\d+(\.\d+)?)\)*)*
-            CheckFormulaCorrectness = new Regex(@"[A-Za-zА-Яа-я0-9\+\-\*\/\(\)\.\,=]", RegexOptions.Compiled);
+            CheckFormulaCorrectness = new Regex(@"[A-Za-zА-Яа-я0-9\^\+\-\*\/\(\)\.\,=]", RegexOptions.Compiled);
             NameFinder = new Regex(@"\b(\d*[А-Яа-яA-Za-z]+\d*)+\b", RegexOptions.Compiled);
             ConstantFinder = new Regex(@"^(\-?\d+(?:(?:\.|,)\d*)?|(?:\.|,)\d+)$", RegexOptions.Compiled);
         }
@@ -37,7 +37,7 @@ namespace FunctionListWorkerGui
         #region Public API
         public decimal Result { get; private set; }
 
-        public Dictionary<string, decimal> SubResults { get; private set; }
+        //public Dictionary<string, decimal> SubResults { get; private set; }
         public Dictionary<string, decimal> Constants { get; private set; }
 
         public void SetNamesAlreadyInUse(IEnumerable<string> names)
@@ -64,8 +64,8 @@ namespace FunctionListWorkerGui
 
             result.ExtraFunctions = new Dictionary<string, Tuple<string, int>>(
                 FormulaWorker.
-                GetSubResults().
-                ToDictionary(x => x.Name, x => new Tuple<string, int>(x.Text, x.RoundTo)));
+                GetSubFunctions().
+                ToDictionary(x => x.Key, x => new Tuple<string, int>(x.Value.Text, x.Value.RoundTo)));
 
             result.Constants = 
                 FormulaWorker.
@@ -88,10 +88,22 @@ namespace FunctionListWorkerGui
                 data.Constants);
                 
             foreach(var function in data.ExtraFunctions)
-                ViewData.Rows.Add(new object[] { function.Key, function.Value.Item1, FUNCTION_TEXT });
+            {
+                AlreadyInUse.Add(function.Key);
+                int index = ViewData.Rows.Add();
+                ViewData.Rows[index].Cells[cName.Index].Value = function.Key;
+                ViewData.Rows[index].Cells[cValue.Index].Value = function.Value.Item1;
+                ViewData.Rows[index].Cells[cType.Index].Value = FUNCTION_TEXT;
+            }                
 
             foreach (var constant in data.Constants)
-                ViewData.Rows.Add(new object[] { constant.Key, constant.Value, CONSTANT_TEXT });
+            {
+                AlreadyInUse.Add(constant.Key);
+                int index = ViewData.Rows.Add();
+                ViewData.Rows[index].Cells[cName.Index].Value = constant.Key;
+                ViewData.Rows[index].Cells[cValue.Index].Value = constant.Value;
+                ViewData.Rows[index].Cells[cType.Index].Value = CONSTANT_TEXT;
+            }
 
             CompositeFormula.Text = data.Mainfunction.Item2;
         }
@@ -102,17 +114,13 @@ namespace FunctionListWorkerGui
 
             string Formula = NeutralizeLocale(CompositeFormula.Text);
 
-            if (!Formula.StartsWith("="))
-                Formula = Formula.Insert(0, "=");
-
             FormulaWorker.SetMainFunction("Result", Formula);
 
             Result = FormulaWorker.Сalculate();
-            SubResults = FormulaWorker.GetSubResults().ToDictionary(k => k.Name, v => v.Result);
 
             Constants = FormulaWorker.GetConstants();
 
-            foreach (var subResult in SubResults)
+            foreach (var subResult in FormulaWorker.GetSubFunctions())
             {
                 var tmp = ViewData.
                      Rows.
@@ -122,7 +130,7 @@ namespace FunctionListWorkerGui
                 if (tmp.Any())
                 {
                    tmp.First().
-                   Cells[cResult.Index].Value = subResult.Value;
+                   Cells[cResult.Index].Value = subResult.Value.Result;
                 }
             }
         }
@@ -178,9 +186,6 @@ namespace FunctionListWorkerGui
 
             if (isFunction)
             {
-                if (!Text.StartsWith("="))
-                    Text = Text.Insert(0, "=");
-
                 FormulaWorker.AddSubFunction(Name, Text, (int) RoundTo.Value);
                 FillExtraFoundlings(Text);
             }
@@ -248,8 +253,10 @@ namespace FunctionListWorkerGui
                     case CONSTANT_TEXT:
                         break;
                 }
+                AlreadyInUse.Remove(Name);
                 FormulaWorker.Calculator.DeleteConstant(Name);
                 ViewData.Rows.Remove(row);
+                FillPossibleNames();
             }
 
         }

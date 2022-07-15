@@ -34,14 +34,14 @@
             this.tbValue = new System.Windows.Forms.TextBox();
             this.btnAdd = new System.Windows.Forms.Button();
             this.ViewData = new System.Windows.Forms.DataGridView();
-            this.RoundTo = new System.Windows.Forms.NumericUpDown();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
             this.cType = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.cName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.cValue = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.cResult = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.RoundTo = new System.Windows.Forms.NumericUpDown();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.ViewData)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.RoundTo)).BeginInit();
             this.SuspendLayout();
@@ -107,6 +107,7 @@
             this.ViewData.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.ViewData.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.DisplayedCells;
             this.ViewData.BackgroundColor = System.Drawing.SystemColors.ButtonFace;
             this.ViewData.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.ViewData.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
@@ -120,6 +121,32 @@
             this.ViewData.TabIndex = 7;
             this.ViewData.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.ViewData_CellEndEdit);
             this.ViewData.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ViewData_KeyDown);
+            // 
+            // cType
+            // 
+            this.cType.HeaderText = "Тип";
+            this.cType.Name = "cType";
+            this.cType.ReadOnly = true;
+            this.cType.Width = 51;
+            // 
+            // cName
+            // 
+            this.cName.HeaderText = "Имя";
+            this.cName.Name = "cName";
+            this.cName.Width = 54;
+            // 
+            // cValue
+            // 
+            this.cValue.HeaderText = "Значение";
+            this.cValue.Name = "cValue";
+            this.cValue.Width = 80;
+            // 
+            // cResult
+            // 
+            this.cResult.HeaderText = "Результат";
+            this.cResult.Name = "cResult";
+            this.cResult.ReadOnly = true;
+            this.cResult.Width = 84;
             // 
             // RoundTo
             // 
@@ -164,28 +191,6 @@
             this.label4.Size = new System.Drawing.Size(55, 13);
             this.label4.TabIndex = 11;
             this.label4.Text = "Значение";
-            // 
-            // cType
-            // 
-            this.cType.HeaderText = "Тип";
-            this.cType.Name = "cType";
-            this.cType.ReadOnly = true;
-            // 
-            // cName
-            // 
-            this.cName.HeaderText = "Имя";
-            this.cName.Name = "cName";
-            // 
-            // cValue
-            // 
-            this.cValue.HeaderText = "Значение";
-            this.cValue.Name = "cValue";
-            // 
-            // cResult
-            // 
-            this.cResult.HeaderText = "Результат";
-            this.cResult.Name = "cResult";
-            this.cResult.ReadOnly = true;
             // 
             // FormulaResolver
             // 

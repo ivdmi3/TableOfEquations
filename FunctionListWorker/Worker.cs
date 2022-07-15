@@ -28,6 +28,10 @@ namespace FunctionListWorker
         public Worker(FunctionInfo MainFunction, FunctionList ListOfSubFunctions, Dictionary<string, decimal> ListOfVariables)
         {
             patterns = new Dictionary<string, Regex>();
+
+            foreach (var function in ListOfSubFunctions)
+                patterns.Add(function.Key, new Regex(string.Format(FunctionNamePattern, function.Value.Name)));
+
             this.ListOfSubFunctions = ListOfSubFunctions;
             this.mainFunction = MainFunction;
             this.Calculator = new EquationParser();
@@ -58,23 +62,30 @@ namespace FunctionListWorker
 
         public void AddSubFunction(string Name, string Text, int RoundTo)
         {
+            if (!patterns.ContainsKey(Name))
+                patterns.Add(Name, new Regex(string.Format(FunctionNamePattern, Name)));
             ListOfSubFunctions.Add(new FunctionInfo(Name, Text, RoundTo));
         }
 
         public void AddSubFunction(FunctionInfo value)
         {
+            if (!patterns.ContainsKey(value.Name))
+                patterns.Add(value.Name, new Regex(string.Format(FunctionNamePattern, value.Name)));
             ListOfSubFunctions.Add(value);
         }
 
         public void EditSubFunction(string Name, string Text)
         {
-            ListOfSubFunctions[Name].Text = Text;
+            if (ListOfSubFunctions.ContainsKey(Name))
+                ListOfSubFunctions[Name].Text = Text;
         }
 
         public void DeleteSubFunction(string Name)
         {
-            ListOfSubFunctions.Remove(Name);
-            if(Calculator.HasConstant(Name)) ;
+            if (ListOfSubFunctions.ContainsKey(Name))
+                ListOfSubFunctions.Remove(Name);
+            if(Calculator.HasConstant(Name))
+                Calculator.DeleteConstant(Name);
         }
 
         public void AddConstantValue(string Name, decimal Value)
@@ -82,18 +93,24 @@ namespace FunctionListWorker
             Calculator.AddConstant(Name, Value);
         }
 
-        
+        public void EditConstantValue(string Name, decimal Value)
+        {
+            if (Calculator.HasConstant(Name))
+                Calculator.EditConstant(Name, Value);
+        }
+
+
         public decimal Сalculate()
         {
             if (mainFunction == null)
                 throw new ArgumentNullException("Не указана итоговая функция!");
             else
-                return internalCalculate(mainFunction, new Queue<FunctionInfo>(ListOfSubFunctions.Values));
+                return internalCalculate(ListOfSubFunctions.Values);
         }
 
-        public List<FunctionInfo> GetSubResults()
+        public FunctionList GetSubFunctions()
         {
-            return ListOfSubFunctions.Values.ToList();
+            return ListOfSubFunctions;
         }
 
         public Dictionary<string, decimal> GetConstants()
@@ -108,7 +125,7 @@ namespace FunctionListWorker
             private set {
                 mainFunction = value;
             }
-        } 
+        }
 
         #endregion
 
@@ -120,36 +137,38 @@ namespace FunctionListWorker
 
         private Dictionary<string,Regex> patterns;
 
-        private decimal internalCalculate2(FunctionInfo InitialFunction, Queue<FunctionInfo> FunctionNames)
+        private decimal internalCalculate(IEnumerable<FunctionInfo> SubFunctions)
         {
-            while(FunctionNames.Count > 0)
+            Queue<FunctionInfo> FunctionsYetToBeResolved = new Queue<FunctionInfo>(SubFunctions);
+
+            while (FunctionsYetToBeResolved.Count > 0)
             {
-                FunctionInfo function = FunctionNames.Dequeue();
-                if ( InitialFunction.Text.Contains(function.Name))
-                    if (function.TryResolve(FunctionNames, Calculator))
-                        Calculator.AddConstant(function.Name, function.Result); 
+                FunctionInfo function = FunctionsYetToBeResolved.Dequeue();
+
+                if (function.TryResolve(FunctionsYetToBeResolved, Calculator))
+                {
+                    if (Calculator.HasConstant(function.Name))
+                        Calculator.EditConstant(function.Name, function.Result);
                     else
-                        FunctionNames.Enqueue(function);
+                        Calculator.AddConstant(function.Name, function.Result);
+                }
+                else
+                    FunctionsYetToBeResolved.Enqueue(function);
             }
 
-            return decimal.Parse(Calculator.Calculate(InitialFunction.Text));
+            string result = Calculator.Calculate(mainFunction.Text);
+
+            return decimal.Parse(result);
         }
 
-        private decimal internalCalculate(FunctionInfo InitialFunction, Queue<FunctionInfo> FunctionNames)
+        private decimal internalCalculate2(FunctionInfo InitialFunction, Queue<FunctionInfo> FunctionNames)
         {
             while (FunctionNames.Count > 0)
             {
                 FunctionInfo function = FunctionNames.Dequeue();
-
-                if (!patterns.ContainsKey(function.Name))
-                    patterns.Add(function.Name, new Regex(string.Format(FunctionNamePattern, function.Name)));
-
-                if (patterns[function.Name].IsMatch(InitialFunction.Text))
+                if (InitialFunction.Text.Contains(function.Name))
                     if (function.TryResolve(FunctionNames, Calculator))
-                        if(Calculator.HasConstant(function.Name))
-                            Calculator.EditConstant(function.Name, function.Result);
-                        else
-                            Calculator.AddConstant(function.Name, function.Result);
+                        Calculator.AddConstant(function.Name, function.Result);
                     else
                         FunctionNames.Enqueue(function);
             }

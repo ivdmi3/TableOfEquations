@@ -4,7 +4,7 @@ namespace FunctionListWorker
 {
     public class FunctionList : Dictionary<string, FunctionInfo>
     {
-        private Dictionary<string, FunctionInfo> dictionary;
+
 
         public FunctionList() { }
 
