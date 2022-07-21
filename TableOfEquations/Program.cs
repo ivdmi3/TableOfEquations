@@ -84,7 +84,7 @@ namespace MathWorker
             };
 
             Worker fw = new Worker(mainFunction, listOfSubFunctions, variables);
-            Console.WriteLine("RESULT: " + fw.Сalculate());
+            Console.WriteLine("RESULT: " + fw.Calculate());
 
             foreach(FunctionInfo result in fw.GetSubFunctions().Values)
             {

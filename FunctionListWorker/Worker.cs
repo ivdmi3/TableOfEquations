@@ -99,8 +99,7 @@ namespace FunctionListWorker
                 Calculator.EditConstant(Name, Value);
         }
 
-
-        public decimal Сalculate()
+        public decimal Calculate()
         {
             if (mainFunction == null)
                 throw new ArgumentNullException("Не указана итоговая функция!");

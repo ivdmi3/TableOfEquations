@@ -287,7 +287,6 @@ namespace MathWorker
             {
                 ConstantsDicitionary.Remove(name);
                 ConstantsNames.Remove(name);
-
             }
         }
 

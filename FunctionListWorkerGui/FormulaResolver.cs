@@ -116,7 +116,7 @@ namespace FunctionListWorkerGui
 
             FormulaWorker.SetMainFunction("Result", Formula);
 
-            Result = FormulaWorker.Сalculate();
+            Result = FormulaWorker.Calculate();
 
             Constants = FormulaWorker.GetConstants();
 
