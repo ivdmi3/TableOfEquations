@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace FunctionListWorkerGui
+namespace FunctionListWorker
 {
     public class RawData
     {

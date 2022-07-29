@@ -58,35 +58,16 @@ namespace FunctionListWorkerGui
 
         public RawData ReturnRawData()
         {
-            RawData result = new RawData();
-
-            result.Mainfunction = new ValueTuple<string, string>("Result", CompositeFormula.Text);
-
-            result.ExtraFunctions = new Dictionary<string, Tuple<string, int>>(
-                FormulaWorker.
-                GetSubFunctions().
-                ToDictionary(x => x.Key, x => new Tuple<string, int>(x.Value.Text, x.Value.RoundTo)));
-
-            result.Constants = 
-                FormulaWorker.
-                GetConstants().
-                Where(x => !result.ExtraFunctions.ContainsKey(x.Key)).
-                ToDictionary(x=>x.Key, x=>x.Value);
-                
-            return result;
+               return FormulaWorker.ReturnRawData();
         }
 
         public void SetFromRawData(RawData data)
         {
             Clear();
 
-            FunctionList subFunctions = new FunctionList(data.ExtraFunctions.ToDictionary(k => k.Key, f => new FunctionInfo(f.Key, f.Value.Item1, f.Value.Item2)));
+            FormulaWorker = new Worker();
+            FormulaWorker.SetFromRawData(data);
 
-            FormulaWorker = new Worker(
-                new FunctionInfo(data.Mainfunction.Item1, data.Mainfunction.Item2),
-                subFunctions,
-                data.Constants);
-                
             foreach(var function in data.ExtraFunctions)
             {
                 AlreadyInUse.Add(function.Key);
@@ -105,7 +86,7 @@ namespace FunctionListWorkerGui
                 ViewData.Rows[index].Cells[cType.Index].Value = CONSTANT_TEXT;
             }
 
-            CompositeFormula.Text = data.Mainfunction.Item2;
+            CompositeFormula.Text = FormulaWorker.MainFunction.Text;
         }
 
         public void Run()

@@ -35,8 +35,47 @@ namespace FunctionListWorker
             this.ListOfSubFunctions = ListOfSubFunctions;
             this.mainFunction = MainFunction;
             this.Calculator = new EquationParser();
+            this.ListOfVariables = ListOfVariables;
             this.Calculator.SetConstants(ListOfVariables);
         }
+
+        public Worker Clone()
+        {
+            Worker newWorker = new Worker();
+            newWorker.SetMainFunction(MainFunction.Name, mainFunction.Text);
+            newWorker.ListOfSubFunctions = new FunctionList(ListOfSubFunctions);
+            foreach(var item in ListOfVariables)
+                newWorker.AddConstantValue(item.Key, item.Value);
+            return newWorker;
+        }
+
+        public RawData ReturnRawData()
+        {
+            RawData result = new RawData();
+
+            result.Mainfunction = new ValueTuple<string, string>("Result", MainFunction.Text);
+
+            result.ExtraFunctions = new Dictionary<string, Tuple<string, int>>(
+                ListOfSubFunctions.
+                ToDictionary(x => x.Key, x => new Tuple<string, int>(x.Value.Text, x.Value.RoundTo)));
+
+            result.Constants =
+                Calculator.
+                GetConstants().
+                Where(x => !result.ExtraFunctions.ContainsKey(x.Key)).
+                ToDictionary(x => x.Key, x => x.Value);
+
+            return result;
+        }
+
+        public void SetFromRawData(RawData data)
+        {
+            SetMainFunction(new FunctionInfo(data.Mainfunction.Item1, data.Mainfunction.Item2));
+            ListOfSubFunctions = new FunctionList(data.ExtraFunctions.ToDictionary(k => k.Key, f => new FunctionInfo(f.Key, f.Value.Item1, f.Value.Item2)));
+            foreach (var item in data.Constants)
+                Calculator.AddConstant(item.Key, item.Value);
+        }
+
 
         public void Dispose()
         {
@@ -131,6 +170,7 @@ namespace FunctionListWorker
         #region Implementation
 
         private FunctionList ListOfSubFunctions;
+        private Dictionary<string, decimal> ListOfVariables;
         private FunctionInfo mainFunction;
         private string FunctionNamePattern = @"[+-/*]?\(*{0}\)*";
 
